@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCG Card Shop Simulator - Save Editor</title>
+
+<!-- Modern Premium Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  /* Ultra-modern dark theme (Zinc/Violet) */
+  --bg: #09090b;          /* Zinc 950 */
+  --panel: #18181b;       /* Zinc 900 */
+  --panel-hover: #27272a; /* Zinc 800 */
+  --input-bg: #000000;    /* Pure black inputs */
+  --accent: #6366f1;      /* Indigo 500 */
+  --accent-hover: #4f46e5;/* Indigo 600 */
+  --accent-alpha: rgba(99, 102, 241, 0.2);
+  --cyan: #06b6d4;        
+  --green: #10b981;       
+  --gold: #f59e0b;        
+  --text: #fafafa;        /* Zinc 50 */
+  --muted: #a1a1aa;       /* Zinc 400 */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(255, 255, 255, 0.15);
+  --red: #ef4444;         
+  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --font-ui: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--bg);
+  /* Ambient glowing orbs in background */
+  background-image: 
+    radial-gradient(circle at 15% 0%, rgba(99, 102, 241, 0.12), transparent 40%),
+    radial-gradient(circle at 85% 100%, rgba(6, 182, 212, 0.12), transparent 40%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================== Header ================== */
+#header {
+  background: rgba(9, 9, 11, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+#header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(to right, #fff, #a1a1aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  flex: 1;
+  letter-spacing: -0.02em;
+}
+
+#unsaved {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--gold);
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  display: none;
+  animation: pulse 2s infinite;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); } }
+
+/* ================== Buttons ================== */
+.btn, .hbtn {
+  font-family: var(--font-ui);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 99px; /* Pill shaped buttons */
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  outline: none;
+}
+.btn:hover, .hbtn:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--border-highlight); transform: translateY(-1px); }
+.btn:active, .hbtn:active { transform: translateY(0); }
+
+/* Primary Button Gradients */
+.btn-p, .hbtn.cyan {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 12px var(--accent-alpha), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.btn-p:hover, .hbtn.cyan:hover { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 6px 16px var(--accent-alpha), inset 0 1px 0 rgba(255,255,255,0.2); }
+.btn-p:disabled, .hbtn.cyan:disabled { opacity: 0.5; pointer-events: none; }
+
+.btn-g { background: linear-gradient(135deg, var(--green), #059669); border: none; color: #fff; }
+.btn-g:hover { background: linear-gradient(135deg, #059669, #047857); }
+.btn-gold { background: linear-gradient(135deg, var(--gold), #d97706); border: none; color: #fff; }
+.btn-gold:hover { background: linear-gradient(135deg, #d97706, #b45309); }
+.btn-r { background: linear-gradient(135deg, var(--red), #dc2626); border: none; color: #fff; }
+.btn-r:hover { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+/* ================== Tabs Widget ================== */
+.tabs-wrapper {
+  position: sticky;
+  top: 85px;
+  z-index: 90;
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+  pointer-events: none; /* Let clicks pass through background */
+}
+
+#tabs {
+  pointer-events: auto;
+  display: inline-flex;
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 6px;
+  gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  overflow-x: auto;
+  max-width: 90vw;
+}
+#tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  padding: 8px 16px;
+  border-radius: 99px;
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
+.tab.active {
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: 0 2px 8px rgba(255,255,255,0.15);
+}
+
+/* ================== Layout & Cards ================== */
+#content { padding: 0 32px 64px; max-width: 1400px; margin: 0 auto; }
+.tab-pane { display: none; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; transform: translateY(10px); }
+.tab-pane.active { display: block; }
+
+@keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+
+.card {
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.card-title::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 16px;
+  background: var(--cyan);
+  border-radius: 4px;
+}
+
+/* ================== Forms & Inputs ================== */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+input[type=text], input[type=number], select {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: var(--font-ui);
+  width: 100%;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.03);
+  box-shadow: 0 0 0 3px var(--accent-alpha), inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Custom Checkboxes */
+.form-group.chk { flex-direction: row; align-items: center; gap: 12px; margin-top: auto; padding-bottom: 12px; }
+.form-group.chk label { margin: 0; font-size: 14px; color: var(--text); cursor: pointer; text-transform: none; letter-spacing: 0; }
+
+input[type=checkbox] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--muted);
+  background: var(--input-bg);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+input[type=checkbox]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px var(--accent-alpha);
+}
+input[type=checkbox]:checked::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ================== Tables ================== */
+.tbl-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+}
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  padding: 16px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255, 255, 255, 0.03); }
+
+td input[type=number], td input[type=text] {
+  padding: 8px 12px;
+  font-size: 13px;
+  width: 90px;
+  background: rgba(0,0,0,0.4);
+}
+
+/* ================== Utilities & Badges ================== */
+.pagination { display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.pagination span { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+.exp-selector { display: flex; flex-wrap: wrap; gap: 12px; }
+.exp-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 16px 8px 8px;
+  cursor: pointer; transition: all 0.2s;
+  color: var(--muted); font-weight: 600; font-size: 13px;
+}
+.exp-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.exp-btn.active { background: var(--accent-alpha); border-color: var(--accent); color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.exp-btn img { width: 36px; height: 50px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+.rarity-base { color: var(--muted); }
+.rarity-first { color: #fcd34d; font-weight: 600; }
+.rarity-silver { color: #e2e8f0; font-weight: 600; }
+.rarity-gold { color: #fbbf24; font-weight: 600; text-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+.rarity-ex { color: #c084fc; font-weight: 600; text-shadow: 0 0 10px rgba(192, 132, 252, 0.3); }
+.rarity-fullart { color: #f87171; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3); }
+
+.foil-badge {
+  background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6, #818cf8);
+  background-size: 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: rgba(255,255,255,0.05); /* Fallback */
+  border: 1px solid rgba(192, 132, 252, 0.3);
+}
+@keyframes shimmer { 0% { background-position: 0%; } 100% { background-position: 300%; } }
+
+/* Filter & Bulk Bars */
+.filter-bar, .bulk-bar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; align-items: center; }
+.bulk-bar { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; }
+.filter-bar input, .filter-bar select, .bulk-bar input { padding: 8px 14px; font-size: 13px; }
+.bulk-label { color: var(--text); font-size: 14px; font-weight: 700; margin-right: 8px; }
+
+.stat-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat {
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+/* ================== Dynamic Elements Overrides (Workers, Grading, Ach) ================== */
+.worker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 24px; }
+.worker-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: all 0.3s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.worker-card.hired {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(0,0,0,0) 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.worker-card h3 { font-family: var(--font-ui) !important; font-size: 16px !important; margin-bottom: 20px !important; }
+.wrow { margin-bottom: 12px !important; }
+.wrow label { font-size: 13px !important; color: var(--muted) !important; font-weight: 600 !important; }
+.wrow input[type=number] { width: 100px !important; text-align: right; }
+
+.pack-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  background: rgba(0,0,0,0.2); padding: 16px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); margin-top: 12px; margin-bottom: 20px;
+}
+.pack-item { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
+
+.grading-batch {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--accent);
+}
+.grading-cards { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.g-chip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.grading-actions { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; }
+
+.ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 20px; }
+.ach-item {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.ach-item:hover { border-color: var(--border-highlight); background: rgba(255,255,255,0.05); }
+.ach-item.unlocked {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--text);
+}
+
+/* ================== JSON Area ================== */
+#raw-json-area {
+  width: 100%; height: 65vh;
+  background: #0d0d0d;
+  border: 1px solid var(--border);
+  color: #a5d6ff;
+  font-family: var(--font-mono);
+  font-size: 13px; line-height: 1.6;
+  border-radius: var(--radius-md);
+  padding: 24px; resize: vertical; outline: none;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+#raw-json-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-alpha), inset 0 2px 10px rgba(0,0,0,0.5); }
+
+/* ================== Modals & Overlays ================== */
+#drop-overlay {
+  position: fixed; inset: 0; background: rgba(9, 9, 11, 0.85); backdrop-filter: blur(8px);
+  z-index: 999; display: none; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 800; color: var(--accent);
+  border: 4px dashed var(--accent); margin: 24px; border-radius: 32px;
+}
+#drop-overlay.show { display: flex; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);
+  z-index: 200; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;
+}
+.modal-overlay.show { display: flex; opacity: 1; }
+.modal {
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 40px; max-width: 480px; width: 90%; text-align: center;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform: scale(0.95); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-overlay.show .modal { transform: scale(1); }
+.modal h3 { font-size: 22px; font-weight: 800; margin-bottom: 16px; }
+.modal p { font-size: 14px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+.modal-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* Messages */
+.no-data {
+  color: var(--muted); text-align: center; padding: 60px 20px;
+  font-size: 15px; font-weight: 600; background: rgba(0,0,0,0.2);
+  border: 1px dashed var(--border); border-radius: var(--radius-md);
+}
+.err-msg, .ok-msg {
+  border-radius: var(--radius-sm); padding: 14px 20px;
+  font-size: 14px; font-weight: 600; margin-bottom: 24px; display: flex; align-items: center;
+}
+.err-msg { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+.ok-msg { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; border: 3px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+.svc-0 { color: var(--muted); font-weight: 600; }
+.svc-1 { color: var(--gold); font-weight: 700; }
+.svc-2 { color: var(--cyan); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div id="drop-overlay">Drop save file here</div>
+
+<div id="header">
+  <h1>TCG Card Shop Simulator Save Editor</h1>
+  <input type="file" id="file-input" accept=".json" style="display:none">
+  <input type="file" id="images-input" accept=".json" style="display:none">
+  <button class="hbtn" onclick="document.getElementById('file-input').click()">Load Save</button>
+  <button class="btn btn-gray" onclick="document.getElementById('images-input').click()" title="Load card_images.json">Load Images</button>
+  <button class="hbtn cyan" onclick="trySave()" id="save-btn" disabled>Save Changes</button>
+  <span id="unsaved">● Unsaved</span>
+</div>
+
+<!-- Wrapped tabs in a container for the floating dock look -->
+<div class="tabs-wrapper">
+  <div id="tabs">
+    <div class="tab active" data-tab="0">Player</div>
+    <div class="tab" data-tab="1">Cards &amp; Collection</div>
+    <div class="tab" data-tab="2">Items</div>
+    <div class="tab" data-tab="3">Workers</div>
+    <div class="tab" data-tab="4">Grading</div>
+    <div class="tab" data-tab="5">Achievements &amp; Unlocks</div>
+    <div class="tab" data-tab="6">Raw JSON</div>
+  </div>
+</div>
+
+<div id="content">
+  <div id="global-msg"></div>
+
+  <!-- TAB 0: PLAYER -->
+  <div class="tab-pane active" id="pane-0">
+    <div class="no-data" id="p-nodata">Load a save file to begin editing.</div>
+    <div id="p-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Player Info</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Player Name</label><input type="text" id="p_name"></div>
+          <div class="form-group"><label>Coins</label><input type="number" id="p_coins" step="0.01"></div>
+          <div class="form-group"><label>Shop Level</label><input type="number" id="p_shopLevel" min="0"></div>
+          <div class="form-group"><label>Shop EXP Points</label><input type="number" id="p_shopExp" min="0"></div>
+          <div class="form-group"><label>Fame Points</label><input type="number" id="p_fame" min="0"></div>
+          <div class="form-group"><label>Total Fame Add</label><input type="number" id="p_totalFame" min="0"></div>
+          <div class="form-group"><label>Current Day</label><input type="number" id="p_day" min="0"></div>
+          <div class="form-group"><label>Review Avg (1.0-5.0)</label><input type="number" id="p_reviewAvg" min="1" max="5" step="0.1"></div>
+          <div class="form-group"><label>Review Count</label><input type="number" id="p_reviewCount" min="0"></div>
+          <div class="form-group"><label>Unlock Room Count</label><input type="number" id="p_unlockRoom" min="0"></div>
+          <div class="form-group"><label>Unlock Warehouse Count</label><input type="number" id="p_unlockWH" min="0"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Flags &amp; Tutorial</div>
+        <div class="form-grid">
+          <div class="form-group chk"><input type="checkbox" id="p_shopOpen"><label for="p_shopOpen">Shop Is Open</label></div>
+          <div class="form-group chk"><input type="checkbox" id="p_tutDone"><label for="p_tutDone">Tutorial Complete</label></div>
+          <div class="form-group"><label>Tutorial Index (0-11)</label><input type="number" id="p_tutIndex" min="0" max="11"></div>
+          <div class="form-group chk"><input type="checkbox" id="p_warehouseUnlocked"><label for="p_warehouseUnlocked">Warehouse Room Unlocked</label></div>
+          <div class="form-group chk"><input type="checkbox" id="p_scannerUnlocked"><label for="p_scannerUnlocked">Scanner Restock Unlocked</label></div>
+        </div>
+        <div style="margin-top:24px">
+          <button class="btn btn-g" onclick="completeTutorial()">Mark Tutorial Complete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 1: CARDS -->
+  <div class="tab-pane" id="pane-1">
+    <div class="no-data" id="c-nodata">Load a save file to begin editing.</div>
+    <div id="c-form" style="display:none">
+      <div class="card">
+        <div class="exp-selector" id="exp-selector"></div>
+      </div>
+      <div class="card">
+        <div class="stat-bar" id="c-stats"></div>
+        <div class="filter-bar">
+          <input type="text" id="c-search" placeholder="Search monster name..." style="width: 240px;">
+          <select id="c-rarity">
+            <option value="">All Rarities</option>
+            <option value="0">Base</option>
+            <option value="1">1st Edition</option>
+            <option value="2">Silver</option>
+            <option value="3">Gold</option>
+            <option value="4">EX</option>
+            <option value="5">Full Art</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;font-weight:600;"><input type="checkbox" id="c-foil"> Foil Only</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);cursor:pointer;font-weight:600;"><input type="checkbox" id="c-owned"> Owned Only</label>
+        </div>
+        <div class="bulk-bar">
+          <span class="bulk-label">Bulk Actions</span>
+          <button class="btn btn-g btn-sm" onclick="bulkUnlockAll()">Unlock All</button>
+          
+          <div style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+          
+          <span style="color:var(--muted);font-size:13px;font-weight:600">Copies:</span>
+          <input type="number" id="bulk-copies" value="99" min="1" style="width: 80px;">
+          <button class="btn btn-p btn-sm" onclick="bulkSetCopies()">Set All</button>
+          <button class="btn btn-gray btn-sm" onclick="bulkClearCopies()">Clear All</button>
+          
+          <div style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+          
+          <span style="color:var(--muted);font-size:13px;font-weight:600">Sell:</span>
+          <input type="number" id="bulk-price" value="0" step="0.01" style="width: 80px;">
+          <button class="btn btn-c btn-sm" onclick="bulkSetPrice()">Set</button>
+          
+          <div style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+          
+          <span style="color:var(--muted);font-size:13px;font-weight:600">Market:</span>
+          <input type="number" id="bulk-market" value="0" step="0.01" style="width: 80px;">
+          <button class="btn btn-gold btn-sm" onclick="bulkSetMarket()">Set</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Monster</th><th>Border</th><th>Foil</th><th>Copies</th><th>Collected</th><th>Sell Price</th><th>Market Price</th></tr></thead>
+            <tbody id="c-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="btn btn-gray btn-sm" onclick="cardPrev()">Previous</button>
+          <span id="c-page-info"></span>
+          <button class="btn btn-gray btn-sm" onclick="cardNext()">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: ITEMS -->
+  <div class="tab-pane" id="pane-2">
+    <div class="no-data" id="i-nodata">Load a save file to begin editing.</div>
+    <div id="i-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Items Inventory (500 types)</div>
+        <div class="filter-bar">
+          <input type="text" id="i-search" placeholder="Filter by item index..." style="width: 240px;">
+        </div>
+        <div class="bulk-bar">
+          <span class="bulk-label">Bulk Actions</span>
+          <button class="btn btn-g btn-sm" onclick="bulkUnlockLicenses()">Unlock All Licenses</button>
+          
+          <div style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+          
+          <span style="color:var(--muted);font-size:13px;font-weight:600">Stock Level:</span>
+          <input type="number" id="bulk-stock" value="99" min="0" style="width: 80px;">
+          <button class="btn btn-p btn-sm" onclick="bulkSetStock()">Apply to All</button>
+          
+          <div style="width: 1px; height: 24px; background: var(--border); margin: 0 8px;"></div>
+          
+          <button class="btn btn-r btn-sm" onclick="bulkClearItemPrices()">Clear All Prices</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Item #</th><th>In Stock</th><th>Sell Price</th><th>Cost Price (Ref)</th><th>Market Price</th><th>License</th></tr></thead>
+            <tbody id="i-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button class="btn btn-gray btn-sm" onclick="itemPrev()">Previous</button>
+          <span id="i-page-info"></span>
+          <button class="btn btn-gray btn-sm" onclick="itemNext()">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: WORKERS -->
+  <div class="tab-pane" id="pane-3">
+    <div class="no-data" id="w-nodata">Load a save file to begin editing.</div>
+    <div id="w-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Shop Workers (9 Slots)</div>
+        <div class="worker-grid" id="w-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: GRADING -->
+  <div class="tab-pane" id="pane-4">
+    <div class="no-data" id="g-nodata">Load a save file to begin editing.</div>
+    <div id="g-form" style="display:none">
+      <div class="card">
+        <div class="card-title" style="justify-content: space-between;">
+          In-Progress Grading Batches
+          <button class="btn btn-g btn-sm" onclick="completeAllBatches()">Complete All Now</button>
+        </div>
+        <div id="g-inprogress"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pending Submission</div>
+        <div id="g-pending"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Completed Graded Cards (<span id="g-count">0</span>)</div>
+        <div id="g-completed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: ACHIEVEMENTS -->
+  <div class="tab-pane" id="pane-5">
+    <div class="no-data" id="a-nodata">Load a save file to begin editing.</div>
+    <div id="a-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Achievements (100)</div>
+        <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+          <button class="btn btn-g" onclick="unlockAllAch()">Unlock All</button>
+          <button class="btn btn-gray" onclick="lockAllAch()">Lock All</button>
+        </div>
+        <div class="ach-grid" id="ach-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Decoration Unlocks</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+          <button class="btn btn-p" onclick="unlockAllDeco('Wall')">Unlock Walls</button>
+          <button class="btn btn-p" onclick="unlockAllDeco('Floor')">Unlock Floors</button>
+          <button class="btn btn-p" onclick="unlockAllDeco('Ceiling')">Unlock Ceilings</button>
+        </div>
+        <div class="stat-bar">
+          <div class="stat" id="deco-wall-stat">Walls: 0/1001</div>
+          <div class="stat" id="deco-floor-stat">Floors: 0/1001</div>
+          <div class="stat" id="deco-ceil-stat">Ceilings: 0/1001</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Decoration Inventory</div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <span id="deco-inv-stat" class="stat" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: var(--gold);">Total: 0</span>
+          <button class="btn btn-gold" onclick="setAllDecoInventory()">Add All Decor (Set to 1)</button>
+          <button class="btn btn-r" onclick="clearDecoInventory()">Clear Inventory</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: RAW JSON -->
+  <div class="tab-pane" id="pane-6">
+    <div class="card">
+      <div class="card-title">Raw JSON Editor</div>
+      <div class="json-tools">
+        <span id="json-lc" style="color:var(--cyan);font-size:13px;font-weight:700;min-width:100px;background:rgba(6,182,212,0.1);padding:6px 12px;border-radius:99px;">No data</span>
+        <input type="text" id="json-search" placeholder="Search text..." style="width:200px">
+        <input type="text" id="json-replace" placeholder="Replace with..." style="width:200px">
+        <button class="btn btn-gray" onclick="jsonReplaceAll()">Replace All</button>
+        <button class="btn btn-p" onclick="applyJsonChanges()" style="margin-left:auto;">Apply JSON Changes</button>
+      </div>
+      <div id="json-msg"></div>
+      <textarea id="raw-json-area" spellcheck="false" oninput="updateJsonLineCount()">Load a save file to see JSON...</textarea>
+    </div>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="save-modal">
+  <div class="modal">
+    <h3>Save Options</h3>
+    <p>Would you like to download a backup of your original file before saving the modified version?</p>
+    <div class="modal-btns">
+      <button class="btn btn-gold" onclick="downloadBackupThenSave()">Yes, Download Backup</button>
+      <button class="btn btn-p" onclick="doSave()">No, Just Save</button>
+      <button class="btn btn-gray" onclick="closeSaveModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========================================================
+// SAFETY HELPER - escape text for safe DOM insertion
+// ========================================================
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ========================================================
+// STATE
+// ========================================================
+var saveData = null;
+var originalData = null;
+var cardImages = {};
+var unsavedChanges = false;
+var currentTab = 0;
+var cardPage = 0;
+var itemPage = 0;
+var currentExpKey = 'tetramon';
+var cachedRows = null;
+var cachedRowsExp = null;
+var CARDS_PER_PAGE = 60;
+var ITEMS_PER_PAGE = 50;
+
+// ========================================================
+// MONSTER NAMES
+// ========================================================
+var TETRAMON_NAMES = {1:'PiggyA',2:'PiggyB',3:'PiggyC',4:'PiggyD',5:'FoxA',6:'FoxB',7:'FoxC',8:'FoxD',9:'GolemA',10:'GolemB',11:'GolemC',12:'GolemD',13:'TreeA',14:'TreeB',15:'TreeC',16:'TreeD',17:'StarfishA',18:'StarfishB',19:'StarfishC',20:'StarfishD',21:'ShellyA',22:'ShellyB',23:'ShellyC',24:'ShellyD',25:'BugA',26:'BugB',27:'BugC',28:'BugD',29:'BatA',30:'BatB',31:'BatC',32:'BatD',33:'Skull',34:'Beetle',35:'Bear',36:'Jellyfish',37:'Wisp',38:'MummyMan',39:'FlowerA',40:'FlowerB',41:'FlowerC',42:'FlowerD',43:'WeirdBirdA',44:'FireSpirit',45:'Angez',46:'Mosquito',47:'HydraA',48:'HydraB',49:'HydraC',50:'HydraD',51:'DragonFire',52:'DragonEarth',53:'DragonWater',54:'DragonThunder',55:'Turtle',56:'FireWolfA',57:'FireWolfB',58:'FireWolfC',59:'FireWolfD',60:'FishA',61:'FishB',62:'FishC',63:'FishD',64:'HalloweenA',65:'HalloweenB',66:'HalloweenC',67:'HalloweenD',68:'TronA',69:'TronB',70:'TronC',71:'TronD',72:'LobsterA',73:'LobsterB',74:'LobsterC',75:'LobsterD',76:'FireBirdA',77:'FireBirdB',78:'FireBirdC',79:'SerpentA',80:'SerpentB',81:'SerpentC',82:'CloudA',83:'CloudB',84:'CloudC',85:'EmeraldA',86:'EmeraldB',87:'EmeraldC',88:'Crystalmon',89:'ElecDragon',90:'CrabA',91:'CrabB',92:'FireUmbrellaDragon',93:'Lanternmon',94:'SeedBugA',95:'SeedBugB',96:'SeedBugC',97:'NinjaBirdA',98:'NinjaBirdB',99:'NinjaBirdC',100:'NinjaBirdD',101:'NinjaCrowC',102:'NinjaCrowD',103:'MuffinTreeA',104:'MuffinTreeB',105:'MuffinTreeC',106:'SharkFishA',107:'SharkFishB',108:'SharkFishC',109:'FireGeckoA',110:'FireGeckoB',111:'EarthDino',112:'FireChickenA',113:'FireChickenB',114:'SeahorseA',115:'SeahorseB',116:'SeahorseC',117:'SeahorseD',118:'SlimeA',119:'SlimeB',120:'SlimeC',121:'SlimeD'};
+var MEGABOT_NAMES = {1000:'Alpha',1001:'Beta',1002:'Gamma',1003:'Ronin',1004:'Bumblebee',1005:'Orca',1006:'Garuda',1007:'Viper',1008:'Blitz',1009:'Cylops',1010:'Kabuto',1011:'Minotaur',1012:'Spectre',1013:'Wolf',1014:'Bolt',1015:'Hawk',1016:'Cyber',1017:'Space',1018:'Hangar',1019:'Arena',1020:'UndergroundDark',1021:'UndergroundLight',1022:'RoninBoss',1023:'OrcaBoss',1024:'GarudaBoss',1025:'ViperBoss',1026:'Max',1027:'Shockwave',1028:'Tremor',1029:'Rhino',1030:'RoninArt',1031:'GarudaArt',1032:'MaxArt',1033:'MinotaurArt',1034:'WolfArt',1035:'SkullArt',1036:'OrcaAlt',1037:'GarudaAlt',1038:'ViperAlt',1039:'KabutoAlt',1040:'Neon',1041:'Pulse',1042:'Raptor',1043:'AncientHammer',1044:'ArcMissile',1045:'Axe',1046:'BarrageMissile',1047:'BarrelHammer',1048:'BattleChip',1049:'BoxingGlove',1050:'ChainGun',1051:'ChillMissile',1052:'ColdShoulder',1053:'CrescentClaw',1054:'CrescentMachete',1055:'CrimsonWheel',1056:'CryoBlaster',1057:'Drill',1058:'DualMissile',1059:'ElecBroadsword',1060:'ElectricChainsaw',1061:'ElectricSpike',1062:'EnergyShield',1063:'FanBlade',1064:'FeatherBlade',1065:'FireAxe',1066:'FireBroadsword',1067:'FireKatana',1068:'FireRocket',1069:'FireShield',1070:'FireTwinAxe',1071:'Flamethrower',1072:'FreezeBomb',1073:'GigaBlade',1074:'GigaCannon',1075:'GreatCleaver',1076:'HeatKnife',1077:'HeatMissile',1078:'IceBroadsword',1079:'IceMortar',1080:'IcePike',1081:'IceSpinner',1082:'IceTwinSpear',1083:'InfernoBoost',1084:'IronBall',1085:'JetBurner',1086:'Katana',1087:'KnightShield',1088:'KnightSword',1089:'LightSaber',1090:'LionShield',1091:'MagneticCoil',1092:'MaulerMace',1093:'MegavoltBeam',1094:'MiniMissile',1095:'MissileCannon',1096:'MoonlightBlade',1097:'MorningStar',1098:'Mortar',1099:'PulseCannon',1100:'RailCannon',1101:'Ravager',1102:'RocketMissile',1103:'RollerSpike',1104:'ShurikenBlade',1105:'SonicBlaster',1106:'SpikeBall',1107:'SpikedWarhammer',1108:'Sword',1109:'ThorHammer',1110:'Thunderblade',1111:'ThunderTwinBlade',1112:'WingBooster'};
+var FANTASYRPG_NAMES = {2000:'Archer',2001:'ArmoredSlime',2002:'AxeWarrior',2003:'Basilisk',2004:'Blacksmith',2005:'CatMage',2006:'CatPirate',2007:'CatThief',2008:'Cook',2009:'DarkKnight',2010:'Dragon',2011:'DragonKnight',2012:'EldritchCreature',2013:'Farmer',2014:'Fencer',2015:'Florist',2016:'GoblinMage',2017:'GoblinThief',2018:'GoblinWarrior',2019:'Golem',2020:'Grandma',2021:'Harpy1',2022:'Harpy2',2023:'InkKnight',2024:'Jester1',2025:'Jester2',2026:'King',2027:'Knight',2028:'Lamia',2029:'Mage',2030:'Mimic1',2031:'Mimic2',2032:'MushroomMonster',2033:'Noble1',2034:'Noble2',2035:'Peasant1',2036:'Peasant2',2037:'Phoenix',2038:'Queen',2039:'Reaper',2040:'Schoolboy1',2041:'Schoolboy2',2042:'Slime',2043:'Snake',2044:'Traveller',2045:'TreeMonster',2046:'Vampire',2047:'Witch',2048:'Wizard',2049:'WolfFantasy'};
+var CATJOB_NAMES = {3000:'Teacher',3001:'Detective',3002:'Woodworker',3003:'Plumber',3004:'Electrician',3005:'Soldier',3006:'General',3007:'Police',3008:'Fireman',3009:'Farmer',3010:'Architect',3011:'Construction',3012:'Bodybuilder',3013:'Archer',3014:'Explorer',3015:'Hiker',3016:'Programmer',3017:'Librarian',3018:'Laundry',3019:'Racer',3020:'Florist',3021:'Geologist',3022:'Gamer',3023:'Maid',3024:'Barber',3025:'Bartender',3026:'Bouncer',3027:'Composer',3028:'Director',3029:'Investor',3030:'Singer',3031:'Musician',3032:'Artist',3033:'Photographer',3034:'Lawyer',3035:'Janitor',3036:'Psychic',3037:'Astronaut',3038:'Scout',3039:'Pirate'};
+
+var BORDER_NAMES =['Base','1st Edition','Silver','Gold','EX','Full Art'];
+var BORDER_CLASSES =['rarity-base','rarity-first','rarity-silver','rarity-gold','rarity-ex','rarity-fullart'];
+var SVC_LABELS =['Standard','Express','Premium'];
+
+var EXPANSIONS =[
+  {key:'tetramon',  label:'Tetramon',   suffix:'',          isGhost:false, imgKey:'tetramon',  monsters:TETRAMON_NAMES,  offset:1,    count:121},
+  {key:'destiny',   label:'Destiny',    suffix:'Destiny',   isGhost:false, imgKey:'destiny',   monsters:TETRAMON_NAMES,  offset:1,    count:121},
+  {key:'megabot',   label:'Megabot',    suffix:'Megabot',   isGhost:false, imgKey:'megabot',   monsters:MEGABOT_NAMES,   offset:1000, count:113},
+  {key:'fantasyrpg',label:'Fantasy RPG',suffix:'FantasyRPG',isGhost:false, imgKey:'fantasyrpg',monsters:FANTASYRPG_NAMES,offset:2000, count:50},
+  {key:'catjob',    label:'Cat Job',    suffix:'CatJob',    isGhost:false, imgKey:'catjob',    monsters:CATJOB_NAMES,    offset:3000, count:40},
+  {key:'ghost',     label:'Ghost',      suffix:'Ghost',     isGhost:true,  imgKey:'ghost',     monsters:null,            offset:0,    count:200},
+  {key:'ghostblack',label:'Ghost Black',suffix:'GhostBlack',isGhost:true,  imgKey:'ghostblack',monsters:null,            offset:0,    count:200},
+];
+
+// ========================================================
+// SAVE INDEX FORMULA
+// ========================================================
+function getSaveIndex(listIdx, borderType, isFoil, isGhost) {
+  if (isGhost) return listIdx * 2 + (isFoil ? 1 : 0);
+  return listIdx * 12 + borderType + (isFoil ? 6 : 0);
+}
+
+function getExp(key) { return EXPANSIONS.find(function(e){return e.key===key;}); }
+
+function suffixOf(expKey) {
+  var e = getExp(expKey);
+  return e ? e.suffix : '';
+}
+function ck(ek)  { return 'm_CardCollectedList'    + suffixOf(ek); }
+function ick(ek) { return 'm_IsCardCollectedList'  + suffixOf(ek); }
+function pk(ek)  { return 'm_CardPriceSetList'     + suffixOf(ek); }
+function mk(ek)  { return 'm_GenCardMarketPriceList'+ suffixOf(ek); }
+
+function ensureCardArrays(ek) {[ck(ek), ick(ek), pk(ek)].forEach(function(k) {
+    if (!Array.isArray(saveData[k])) saveData[k] = [];
+    while (saveData[k].length < 2100) saveData[k].push(k === ick(ek) ? false : 0);
+  });
+  var mKey = mk(ek);
+  if (!Array.isArray(saveData[mKey])) saveData[mKey] = [];
+  while (saveData[mKey].length < 2100) saveData[mKey].push({generatedMarketPrice:0,pricePercentChangeList:0,pastPricePercentChangeList:[]});
+}
+
+// ========================================================
+// BUILD CARD ROWS
+// ========================================================
+function buildCardRows(expKey) {
+  var exp = getExp(expKey);
+  if (!exp) return[];
+  ensureCardArrays(expKey);
+  var rows =[];
+
+  if (exp.isGhost) {
+    for (var li = 0; li < exp.count; li++) {
+      for (var f = 0; f <= 1; f++) {
+        var si = getSaveIndex(li, 0, f===1, true);
+        if (si >= 2100) break;
+        var copies = saveData[ck(expKey)][si] || 0;
+        var isColl = !!(saveData[ick(expKey)][si]);
+        var sellP  = saveData[pk(expKey)][si] || 0;
+        var mObj   = saveData[mk(expKey)][si];
+        var mktP   = mObj ? (mObj.generatedMarketPrice || 0) : 0;
+        rows.push({li:li, monsterType:li, borderType:0, isFoil:f===1, si:si, copies:copies, isColl:isColl, sellP:sellP, mktP:mktP, name:'Ghost Card #'+li});
+      }
+    }
+  } else {
+    var mList = exp.monsters;
+    Object.keys(mList).forEach(function(mtStr) {
+      var mt = parseInt(mtStr);
+      var li = mt - exp.offset;
+      for (var b = 0; b < 6; b++) {
+        for (var f = 0; f <= 1; f++) {
+          var si = getSaveIndex(li, b, f===1, false);
+          if (si < 0 || si >= 2100) continue;
+          var copies = saveData[ck(expKey)][si] || 0;
+          var isColl = !!(saveData[ick(expKey)][si]);
+          var sellP  = saveData[pk(expKey)][si] || 0;
+          var mObj   = saveData[mk(expKey)][si];
+          var mktP   = mObj ? (mObj.generatedMarketPrice || 0) : 0;
+          rows.push({li:li, monsterType:mt, borderType:b, isFoil:f===1, si:si, copies:copies, isColl:isColl, sellP:sellP, mktP:mktP, name:mList[mt]||('Mon#'+mt)});
+        }
+      }
+    });
+    rows.sort(function(a,b){ return a.li-b.li || a.borderType-b.borderType || (a.isFoil?1:0)-(b.isFoil?1:0); });
+  }
+  return rows;
+}
+
+// ========================================================
+// FILE LOADING
+// ========================================================
+document.getElementById('file-input').addEventListener('change', function(e) {
+  var f = e.target.files[0];
+  if (f) loadSaveFile(f);
+  this.value = '';
+});
+document.getElementById('images-input').addEventListener('change', function(e) {
+  var f = e.target.files[0];
+  if (f) loadImagesFile(f);
+  this.value = '';
+});
+
+document.addEventListener('dragover', function(e){ e.preventDefault(); document.getElementById('drop-overlay').classList.add('show'); });
+document.addEventListener('dragleave', function(e){ if (!e.relatedTarget) document.getElementById('drop-overlay').classList.remove('show'); });
+document.addEventListener('drop', function(e){
+  e.preventDefault();
+  document.getElementById('drop-overlay').classList.remove('show');
+  var f = e.dataTransfer.files[0];
+  if (f && (f.name.endsWith('.json') || f.type === 'application/json')) loadSaveFile(f);
+});
+
+function loadSaveFile(file) {
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if (!Object.prototype.hasOwnProperty.call(parsed, 'm_PlayerName')) {
+        showMsg('err', 'Not a valid Card Shop Simulator save file (missing m_PlayerName).');
+        return;
+      }
+      saveData = parsed;
+      originalData = e.target.result;
+      unsavedChanges = false;
+      document.getElementById('save-btn').disabled = false;
+      document.getElementById('unsaved').style.display = 'none';
+      renderAll();
+    } catch(err) {
+      showMsg('err', 'JSON parse error: ' + err.message);
+    }
+  };
+  r.readAsText(file);
+}
+
+function loadImagesFile(file) {
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      var imgs = JSON.parse(e.target.result);
+      cardImages = imgs;
+      renderExpSelector();
+      showMsg('ok', 'Card images loaded.');
+    } catch(err) {
+      showMsg('err', 'Failed to parse card_images.json: ' + err.message);
+    }
+  };
+  r.readAsText(file);
+}
+
+function showMsg(type, msg) {
+  var el = document.createElement('div');
+  el.className = type === 'err' ? 'err-msg' : 'ok-msg';
+  el.textContent = msg;
+  var cont = document.getElementById('global-msg');
+  cont.appendChild(el);
+  setTimeout(function(){ if (el.parentNode) el.parentNode.removeChild(el); }, 5000);
+}
+
+function markChanged() {
+  unsavedChanges = true;
+  document.getElementById('unsaved').style.display = 'inline-block';
+  if (currentTab === 6) updateRawJson();
+}
+
+// ========================================================
+// TABS
+// ========================================================
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    var idx = parseInt(this.getAttribute('data-tab'));
+    switchTab(idx);
+  });
+});
+
+function switchTab(idx) {
+  currentTab = idx;
+  document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.toggle('active', i===idx); });
+  document.querySelectorAll('.tab-pane').forEach(function(p,i){ p.classList.toggle('active', i===idx); });
+  if (idx === 6 && saveData) updateRawJson();
+}
+
+function renderAll() {
+  renderPlayer();
+  renderExpSelector();
+  cachedRows = null; cachedRowsExp = null;
+  cardPage = 0;
+  renderCards();
+  itemPage = 0;
+  renderItems();
+  renderWorkers();
+  renderGrading();
+  renderAchievements();
+  if (currentTab === 6) updateRawJson();
+}
+
+// ========================================================
+// TAB 0: PLAYER
+// ========================================================
+function renderPlayer() {
+  if (!saveData) return;
+  document.getElementById('p-nodata').style.display = 'none';
+  document.getElementById('p-form').style.display = 'block';
+  var sd = saveData;
+  setV('p_name', sd.m_PlayerName || '');
+  var coins = sd.m_CoinAmountDouble !== undefined ? sd.m_CoinAmountDouble : (sd.m_CoinAmount || 0);
+  setV('p_coins', coins);
+  setV('p_shopLevel', sd.m_ShopLevel || 0);
+  setV('p_shopExp', sd.m_ShopExpPoint || 0);
+  setV('p_fame', sd.m_FamePoint || 0);
+  setV('p_totalFame', sd.m_TotalFameAdd || 0);
+  setV('p_day', sd.m_CurrentDay || 0);
+  setV('p_reviewAvg', sd.m_CustomerReviewScoreAverage !== undefined ? sd.m_CustomerReviewScoreAverage : 5);
+  setV('p_reviewCount', sd.m_CustomerReviewCount || 0);
+  setV('p_unlockRoom', sd.m_UnlockRoomCount || 0);
+  setV('p_unlockWH', sd.m_UnlockWarehouseRoomCount || 0);
+  setV('p_tutIndex', sd.m_TutorialIndex || 0);
+  setCh('p_shopOpen', !!sd.m_IsShopOpen);
+  setCh('p_tutDone', !!sd.m_HasFinishedTutorial);
+  setCh('p_warehouseUnlocked', !!sd.m_IsWarehouseRoomUnlocked);
+  setCh('p_scannerUnlocked', !!sd.m_IsScannerRestockUnlocked);
+
+  bindPlayerInputs();
+}
+
+var playerInputsBound = false;
+function bindPlayerInputs() {
+  if (playerInputsBound) return;
+  playerInputsBound = true;
+  bindInput('p_name', function(v){ saveData.m_PlayerName = v; markChanged(); });
+  bindInput('p_coins', function(v){ var n=parseFloat(v)||0; saveData.m_CoinAmount=n; saveData.m_CoinAmountDouble=n; markChanged(); });
+  bindInput('p_shopLevel', function(v){ saveData.m_ShopLevel=parseInt(v)||0; markChanged(); });
+  bindInput('p_shopExp', function(v){ saveData.m_ShopExpPoint=parseInt(v)||0; markChanged(); });
+  bindInput('p_fame', function(v){ saveData.m_FamePoint=parseInt(v)||0; markChanged(); });
+  bindInput('p_totalFame', function(v){ saveData.m_TotalFameAdd=parseInt(v)||0; markChanged(); });
+  bindInput('p_day', function(v){ saveData.m_CurrentDay=parseInt(v)||0; markChanged(); });
+  bindInput('p_reviewAvg', function(v){ saveData.m_CustomerReviewScoreAverage=parseFloat(v)||1; markChanged(); });
+  bindInput('p_reviewCount', function(v){ saveData.m_CustomerReviewCount=parseInt(v)||0; markChanged(); });
+  bindInput('p_unlockRoom', function(v){ saveData.m_UnlockRoomCount=parseInt(v)||0; markChanged(); });
+  bindInput('p_unlockWH', function(v){ saveData.m_UnlockWarehouseRoomCount=parseInt(v)||0; markChanged(); });
+  bindInput('p_tutIndex', function(v){ saveData.m_TutorialIndex=parseInt(v)||0; markChanged(); });
+  bindCheck('p_shopOpen', function(v){ saveData.m_IsShopOpen=v; markChanged(); });
+  bindCheck('p_tutDone', function(v){ saveData.m_HasFinishedTutorial=v; markChanged(); });
+  bindCheck('p_warehouseUnlocked', function(v){ saveData.m_IsWarehouseRoomUnlocked=v; markChanged(); });
+  bindCheck('p_scannerUnlocked', function(v){ saveData.m_IsScannerRestockUnlocked=v; markChanged(); });
+}
+
+function bindInput(id, fn) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('input', function(){ fn(this.value); });
+}
+function bindCheck(id, fn) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('change', function(){ fn(this.checked); });
+}
+function setV(id, v) { var el = document.getElementById(id); if (el) el.value = v; }
+function setCh(id, v) { var el = document.getElementById(id); if (el) el.checked = v; }
+
+function completeTutorial() {
+  if (!saveData) return;
+  saveData.m_HasFinishedTutorial = true;
+  saveData.m_TutorialIndex = 11;
+  setCh('p_tutDone', true);
+  setV('p_tutIndex', 11);
+  markChanged();
+}
+
+// ========================================================
+// TAB 1: CARDS
+// ========================================================
+function renderExpSelector() {
+  var cont = document.getElementById('exp-selector');
+  if (!cont) return;
+  while (cont.firstChild) cont.removeChild(cont.firstChild);
+  EXPANSIONS.forEach(function(exp) {
+    var btn = document.createElement('div');
+    btn.className = 'exp-btn' + (currentExpKey === exp.key ? ' active' : '');
+    if (cardImages[exp.imgKey]) {
+      var img = document.createElement('img');
+      img.src = cardImages[exp.imgKey];
+      img.alt = exp.label;
+      btn.appendChild(img);
+    } else {
+      var ph = document.createElement('div');
+      ph.style.cssText = 'width:36px;height:50px;background:var(--border);border-radius:6px;';
+      btn.appendChild(ph);
+    }
+    var sp = document.createElement('span');
+    sp.textContent = exp.label;
+    btn.appendChild(sp);
+    btn.addEventListener('click', function() {
+      currentExpKey = exp.key;
+      cachedRows = null; cachedRowsExp = null;
+      cardPage = 0;
+      renderExpSelector();
+      renderCards();
+    });
+    cont.appendChild(btn);
+  });
+  if (saveData) updateCardsStats();
+}
+
+function updateCardsStats() {
+  var el = document.getElementById('c-stats');
+  if (!el || !saveData) return;
+  ensureCardArrays(currentExpKey);
+  var arr = saveData[ick(currentExpKey)] ||[];
+  var owned = arr.filter(Boolean).length;
+  while (el.firstChild) el.removeChild(el.firstChild);
+  var d = document.createElement('div');
+  d.className = 'stat';
+  d.textContent = 'Collected: ' + owned + ' / ' + arr.length + ' slots';
+  el.appendChild(d);
+}
+
+function getFilteredRows() {
+  if (cachedRowsExp !== currentExpKey || !cachedRows) {
+    cachedRows = buildCardRows(currentExpKey);
+    cachedRowsExp = currentExpKey;
+  }
+  var search = (document.getElementById('c-search') ? document.getElementById('c-search').value.toLowerCase() : '');
+  var rarity  = document.getElementById('c-rarity') ? document.getElementById('c-rarity').value : '';
+  var foilO   = document.getElementById('c-foil')   ? document.getElementById('c-foil').checked : false;
+  var ownedO  = document.getElementById('c-owned')  ? document.getElementById('c-owned').checked : false;
+  return cachedRows.filter(function(r) {
+    if (search && r.name.toLowerCase().indexOf(search) === -1) return false;
+    if (rarity !== '' && String(r.borderType) !== rarity) return false;
+    if (foilO && !r.isFoil) return false;
+    if (ownedO && r.copies <= 0) return false;
+    return true;
+  });
+}
+
+function renderCards() {
+  if (!saveData) return;
+  document.getElementById('c-nodata').style.display = 'none';
+  document.getElementById('c-form').style.display = 'block';
+  updateCardsStats();
+
+  var rows = getFilteredRows();
+  var total = rows.length;
+  var pages = Math.max(1, Math.ceil(total / CARDS_PER_PAGE));
+  if (cardPage >= pages) cardPage = pages - 1;
+  var slice = rows.slice(cardPage * CARDS_PER_PAGE, (cardPage+1) * CARDS_PER_PAGE);
+
+  var tbody = document.getElementById('c-tbody');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+  slice.forEach(function(row) {
+    var tr = document.createElement('tr');
+
+    var tdSi = document.createElement('td');
+    tdSi.textContent = row.si;
+    tr.appendChild(tdSi);
+
+    var tdName = document.createElement('td');
+    tdName.textContent = row.name;
+    tdName.style.fontWeight = '600';
+    tr.appendChild(tdName);
+
+    var tdBorder = document.createElement('td');
+    tdBorder.className = BORDER_CLASSES[row.borderType] || '';
+    tdBorder.textContent = BORDER_NAMES[row.borderType] || 'Border' + row.borderType;
+    tr.appendChild(tdBorder);
+
+    var tdFoil = document.createElement('td');
+    if (row.isFoil) {
+      var foilSpan = document.createElement('span');
+      foilSpan.className = 'foil-badge';
+      foilSpan.textContent = 'FOIL';
+      tdFoil.appendChild(foilSpan);
+    }
+    tr.appendChild(tdFoil);
+
+    var tdCopies = document.createElement('td');
+    var inpCopies = document.createElement('input');
+    inpCopies.type = 'number'; inpCopies.min = '0'; inpCopies.value = row.copies;
+    (function(r) {
+      inpCopies.addEventListener('change', function() {
+        var v = parseInt(this.value) || 0;
+        ensureCardArrays(currentExpKey);
+        saveData[ck(currentExpKey)][r.si] = v;
+        saveData[ick(currentExpKey)][r.si] = v > 0;
+        r.copies = v;
+        r.isColl = v > 0;
+        var cbInRow = this.closest('tr').querySelector('input[type=checkbox]');
+        if (cbInRow) cbInRow.checked = v > 0;
+        cachedRows = null; cachedRowsExp = null;
+        markChanged();
+        updateCardsStats();
+      });
+    })(row);
+    tdCopies.appendChild(inpCopies);
+    tr.appendChild(tdCopies);
+
+    var tdColl = document.createElement('td');
+    var cbColl = document.createElement('input');
+    cbColl.type = 'checkbox'; cbColl.checked = row.isColl;
+    (function(r) {
+      cbColl.addEventListener('change', function() {
+        ensureCardArrays(currentExpKey);
+        saveData[ick(currentExpKey)][r.si] = this.checked;
+        r.isColl = this.checked;
+        cachedRows = null; cachedRowsExp = null;
+        markChanged();
+        updateCardsStats();
+      });
+    })(row);
+    tdColl.appendChild(cbColl);
+    tr.appendChild(tdColl);
+
+    var tdSell = document.createElement('td');
+    var inpSell = document.createElement('input');
+    inpSell.type = 'number'; inpSell.min = '0'; inpSell.step = '0.01'; inpSell.value = row.sellP.toFixed(2);
+    (function(r) {
+      inpSell.addEventListener('change', function() {
+        var v = parseFloat(this.value) || 0;
+        ensureCardArrays(currentExpKey);
+        saveData[pk(currentExpKey)][r.si] = v;
+        r.sellP = v;
+        markChanged();
+      });
+    })(row);
+    tdSell.appendChild(inpSell);
+    tr.appendChild(tdSell);
+
+    var tdMkt = document.createElement('td');
+    var inpMkt = document.createElement('input');
+    inpMkt.type = 'number'; inpMkt.min = '0'; inpMkt.step = '0.01'; inpMkt.value = row.mktP.toFixed(2);
+    (function(r) {
+      inpMkt.addEventListener('change', function() {
+        var v = parseFloat(this.value) || 0;
+        ensureCardArrays(currentExpKey);
+        var mktArr = saveData[mk(currentExpKey)];
+        if (!mktArr[r.si] || typeof mktArr[r.si] !== 'object') {
+          mktArr[r.si] = {generatedMarketPrice:0,pricePercentChangeList:0,pastPricePercentChangeList:[]};
+        }
+        mktArr[r.si].generatedMarketPrice = v;
+        r.mktP = v;
+        markChanged();
+      });
+    })(row);
+    tdMkt.appendChild(inpMkt);
+    tr.appendChild(tdMkt);
+
+    tbody.appendChild(tr);
+  });
+
+  var pageInfo = document.getElementById('c-page-info');
+  if (pageInfo) pageInfo.textContent = 'Page ' + (cardPage+1) + ' of ' + pages + ' (' + total + ' results)';
+}
+
+(function() {
+  var bound = false;
+  function bindFilters() {
+    if (bound) return; bound = true;['c-search','c-rarity','c-foil','c-owned'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', function(){ cardPage=0; renderCards(); });
+      if (el && el.tagName === 'INPUT' && el.type === 'text') el.addEventListener('input', function(){ cardPage=0; renderCards(); });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', bindFilters);
+  setTimeout(bindFilters, 100);
+})();
+
+function cardPrev() { if (cardPage > 0) { cardPage--; renderCards(); } }
+function cardNext() {
+  var rows = getFilteredRows();
+  var pages = Math.ceil(rows.length / CARDS_PER_PAGE);
+  if (cardPage < pages-1) { cardPage++; renderCards(); }
+}
+
+function bulkUnlockAll() {
+  if (!saveData) return;
+  ensureCardArrays(currentExpKey);
+  var rows = buildCardRows(currentExpKey);
+  rows.forEach(function(r) {
+    saveData[ck(currentExpKey)][r.si] = Math.max(saveData[ck(currentExpKey)][r.si]||0, 1);
+    saveData[ick(currentExpKey)][r.si] = true;
+  });
+  cachedRows=null; cachedRowsExp=null; markChanged(); renderCards(); updateCardsStats();
+}
+function bulkSetCopies() {
+  if (!saveData) return;
+  var v = parseInt(document.getElementById('bulk-copies').value) || 1;
+  ensureCardArrays(currentExpKey);
+  buildCardRows(currentExpKey).forEach(function(r) {
+    saveData[ck(currentExpKey)][r.si] = v;
+    saveData[ick(currentExpKey)][r.si] = v > 0;
+  });
+  cachedRows=null; cachedRowsExp=null; markChanged(); renderCards(); updateCardsStats();
+}
+function bulkClearCopies() {
+  if (!saveData) return;
+  ensureCardArrays(currentExpKey);
+  buildCardRows(currentExpKey).forEach(function(r) {
+    saveData[ck(currentExpKey)][r.si] = 0;
+    saveData[ick(currentExpKey)][r.si] = false;
+  });
+  cachedRows=null; cachedRowsExp=null; markChanged(); renderCards(); updateCardsStats();
+}
+function bulkSetPrice() {
+  if (!saveData) return;
+  var v = parseFloat(document.getElementById('bulk-price').value) || 0;
+  ensureCardArrays(currentExpKey);
+  buildCardRows(currentExpKey).forEach(function(r) { saveData[pk(currentExpKey)][r.si] = v; });
+  cachedRows=null; cachedRowsExp=null; markChanged(); renderCards();
+}
+function bulkSetMarket() {
+  if (!saveData) return;
+  var v = parseFloat(document.getElementById('bulk-market').value) || 0;
+  ensureCardArrays(currentExpKey);
+  var mktArr = saveData[mk(currentExpKey)];
+  buildCardRows(currentExpKey).forEach(function(r) {
+    if (!mktArr[r.si]||typeof mktArr[r.si]!=='object') mktArr[r.si]={generatedMarketPrice:0,pricePercentChangeList:0,pastPricePercentChangeList:[]};
+    mktArr[r.si].generatedMarketPrice = v;
+  });
+  cachedRows=null; cachedRowsExp=null; markChanged(); renderCards();
+}
+
+// ========================================================
+// TAB 2: ITEMS
+// ========================================================
+function ensureItemArrays() {
+  var defs = {m_CurrentTotalItemCountList:500, m_SetItemPriceList:500, m_GeneratedCostPriceList:500, m_GeneratedMarketPriceList:500};
+  Object.keys(defs).forEach(function(k) {
+    if (!Array.isArray(saveData[k])) saveData[k] =[];
+    while (saveData[k].length < defs[k]) saveData[k].push(0);
+  });
+  if (!Array.isArray(saveData.m_IsItemLicenseUnlocked)) saveData.m_IsItemLicenseUnlocked =[];
+  while (saveData.m_IsItemLicenseUnlocked.length < 501) saveData.m_IsItemLicenseUnlocked.push(false);
+}
+
+(function(){
+  var bound = false;
+  function bindItemFilters() {
+    if (bound) return; bound = true;
+    var el = document.getElementById('i-search');
+    if (el) { el.addEventListener('input', function(){ itemPage=0; renderItems(); }); }
+  }
+  document.addEventListener('DOMContentLoaded', bindItemFilters);
+  setTimeout(bindItemFilters, 100);
+})();
+
+function renderItems() {
+  if (!saveData) return;
+  document.getElementById('i-nodata').style.display = 'none';
+  document.getElementById('i-form').style.display = 'block';
+  ensureItemArrays();
+
+  var search = (document.getElementById('i-search') ? document.getElementById('i-search').value : '');
+  var indices =[];
+  for (var i = 0; i < 500; i++) {
+    if (!search || String(i).indexOf(search) !== -1) indices.push(i);
+  }
+  var total = indices.length;
+  var pages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+  if (itemPage >= pages) itemPage = pages-1;
+  var slice = indices.slice(itemPage * ITEMS_PER_PAGE, (itemPage+1) * ITEMS_PER_PAGE);
+
+  var tbody = document.getElementById('i-tbody');
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+  slice.forEach(function(i) {
+    var tr = document.createElement('tr');
+
+    var tdIdx = document.createElement('td');
+    var strong = document.createElement('strong');
+    strong.textContent = 'Item #' + i;
+    tdIdx.appendChild(strong);
+    tr.appendChild(tdIdx);
+
+    var tdStock = document.createElement('td');
+    var inpStock = document.createElement('input');
+    inpStock.type = 'number'; inpStock.min = '0'; inpStock.value = saveData.m_CurrentTotalItemCountList[i] || 0;
+    (function(idx){ inpStock.addEventListener('change', function(){ saveData.m_CurrentTotalItemCountList[idx]=parseInt(this.value)||0; markChanged(); }); })(i);
+    tdStock.appendChild(inpStock); tr.appendChild(tdStock);
+
+    var tdSell = document.createElement('td');
+    var inpSell = document.createElement('input');
+    inpSell.type = 'number'; inpSell.min = '0'; inpSell.step = '0.01'; inpSell.value = (saveData.m_SetItemPriceList[i]||0).toFixed(2);
+    (function(idx){ inpSell.addEventListener('change', function(){ saveData.m_SetItemPriceList[idx]=parseFloat(this.value)||0; markChanged(); }); })(i);
+    tdSell.appendChild(inpSell); tr.appendChild(tdSell);
+
+    var tdCost = document.createElement('td');
+    var costSpan = document.createElement('span');
+    costSpan.style.color = 'var(--muted)';
+    costSpan.textContent = (saveData.m_GeneratedCostPriceList[i]||0).toFixed(2);
+    tdCost.appendChild(costSpan); tr.appendChild(tdCost);
+
+    var tdMkt = document.createElement('td');
+    var inpMkt = document.createElement('input');
+    inpMkt.type = 'number'; inpMkt.min = '0'; inpMkt.step = '0.01'; inpMkt.value = (saveData.m_GeneratedMarketPriceList[i]||0).toFixed(2);
+    (function(idx){ inpMkt.addEventListener('change', function(){ saveData.m_GeneratedMarketPriceList[idx]=parseFloat(this.value)||0; markChanged(); }); })(i);
+    tdMkt.appendChild(inpMkt); tr.appendChild(tdMkt);
+
+    var tdLic = document.createElement('td');
+    var cbLic = document.createElement('input');
+    cbLic.type = 'checkbox'; cbLic.checked = !!(i < 501 && saveData.m_IsItemLicenseUnlocked[i]);
+    (function(idx){ cbLic.addEventListener('change', function(){ saveData.m_IsItemLicenseUnlocked[idx]=this.checked; markChanged(); }); })(i);
+    tdLic.appendChild(cbLic); tr.appendChild(tdLic);
+
+    tbody.appendChild(tr);
+  });
+
+  var pi = document.getElementById('i-page-info');
+  if (pi) pi.textContent = 'Page ' + (itemPage+1) + ' of ' + pages + ' (' + total + ' items)';
+}
+
+function itemPrev() { if (itemPage > 0) { itemPage--; renderItems(); } }
+function itemNext() {
+  var search = document.getElementById('i-search') ? document.getElementById('i-search').value : '';
+  var total = 0;
+  for (var i=0;i<500;i++) if (!search||String(i).indexOf(search)!==-1) total++;
+  var pages = Math.ceil(total/ITEMS_PER_PAGE);
+  if (itemPage < pages-1) { itemPage++; renderItems(); }
+}
+
+function bulkUnlockLicenses() {
+  if (!saveData) return; ensureItemArrays();
+  for (var i=0;i<501;i++) saveData.m_IsItemLicenseUnlocked[i]=true;
+  markChanged(); renderItems();
+}
+function bulkSetStock() {
+  if (!saveData) return; ensureItemArrays();
+  var v = parseInt(document.getElementById('bulk-stock').value)||0;
+  for (var i=0;i<500;i++) saveData.m_CurrentTotalItemCountList[i]=v;
+  markChanged(); renderItems();
+}
+function bulkClearItemPrices() {
+  if (!saveData) return; ensureItemArrays();
+  for (var i=0;i<500;i++) { saveData.m_SetItemPriceList[i]=0; saveData.m_GeneratedMarketPriceList[i]=0; }
+  markChanged(); renderItems();
+}
+
+// ========================================================
+// TAB 3: WORKERS
+// ========================================================
+function makeDefaultWorker() {
+  return {primaryTask:0,secondaryTask:0,workerTask:0,currentState:0,pos:{x:0,y:0,z:0},rot:{x:0,y:0,z:0,w:1},
+    isFillShelfWithoutLabel:false,isRoundUpPrice:false,isRoundUpCardPrice:false,
+    isAvoidSetCardPrice:false,isAvoidSetCardPriceWhileRestock:false,
+    isGoingHome:false,isBonusBoosted:false,bonusBoostedCount:0,
+    setPriceMultiplier:1.0,setCardPriceMultiplier:1.0,
+    cardPackItemTypeEnabledList:[true,true,true,true,true,true,true,true],
+    expList:new Array(100).fill(0)};
+}
+
+function renderWorkers() {
+  if (!saveData) return;
+  document.getElementById('w-nodata').style.display = 'none';
+  document.getElementById('w-form').style.display = 'block';
+  if (!Array.isArray(saveData.m_WorkerSaveDataList)) saveData.m_WorkerSaveDataList =[];
+  while (saveData.m_WorkerSaveDataList.length < 9) saveData.m_WorkerSaveDataList.push(makeDefaultWorker());
+  if (!Array.isArray(saveData.m_IsWorkerHired)) saveData.m_IsWorkerHired =[];
+  while (saveData.m_IsWorkerHired.length < 100) saveData.m_IsWorkerHired.push(false);
+
+  var grid = document.getElementById('w-grid');
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+  for (var i = 0; i < 9; i++) grid.appendChild(buildWorkerCard(i));
+}
+
+function buildWorkerCard(i) {
+  var w = saveData.m_WorkerSaveDataList[i];
+  var hired = !!(saveData.m_IsWorkerHired[i]);
+  if (!Array.isArray(w.cardPackItemTypeEnabledList)) w.cardPackItemTypeEnabledList = new Array(8).fill(true);
+  while (w.cardPackItemTypeEnabledList.length < 8) w.cardPackItemTypeEnabledList.push(true);
+  if (!Array.isArray(w.expList)) w.expList = new Array(100).fill(0);
+  while (w.expList.length < 100) w.expList.push(0);
+  var totalExp = w.expList.reduce(function(a,b){return a+b;},0);
+
+  var div = document.createElement('div');
+  div.className = 'worker-card' + (hired ? ' hired' : '');
+  div.id = 'wcard-' + i;
+
+  var h3 = document.createElement('h3');
+  h3.style.cssText = 'font-size:16px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;';
+  var titleText = document.createElement('span');
+  titleText.textContent = 'Worker ' + (i + 1);
+  h3.appendChild(titleText);
+  
+  var statusSpan = document.createElement('span');
+  statusSpan.style.cssText = hired ? 'color:var(--green);font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(16,185,129,0.15);padding:4px 8px;border-radius:4px;' : 'color:var(--muted);font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;background:rgba(255,255,255,0.05);padding:4px 8px;border-radius:4px;';
+  statusSpan.textContent = hired ? '● Hired' : '○ Available';
+  h3.appendChild(statusSpan);
+  div.appendChild(h3);
+
+  var hiredRow = document.createElement('div');
+  hiredRow.className = 'wrow';
+  hiredRow.style.borderBottom = '1px solid var(--border)';
+  hiredRow.style.paddingBottom = '16px';
+  hiredRow.style.marginBottom = '20px';
+  var hiredLabel = document.createElement('label');
+  hiredLabel.textContent = 'Employ Worker:';
+  hiredRow.appendChild(hiredLabel);
+  var hiredCb = document.createElement('input');
+  hiredCb.type = 'checkbox';
+  hiredCb.checked = hired;
+  (function(idx){ hiredCb.addEventListener('change', function(){ setWorkerHired(idx, this.checked); }); })(i);
+  hiredRow.appendChild(hiredCb);
+  div.appendChild(hiredRow);
+
+  if (hired) {
+    var details = document.createElement('div');
+
+    details.appendChild(makeWorkerNumberRow(i, 'setPriceMultiplier', 'Price Multiplier:', w.setPriceMultiplier || 1));
+    details.appendChild(makeWorkerNumberRow(i, 'setCardPriceMultiplier', 'Card Price Multiplier:', w.setCardPriceMultiplier || 1));
+
+    var flags = [
+      ['isFillShelfWithoutLabel','Fill Without Label'],['isRoundUpPrice','Round Up Price'],
+      ['isRoundUpCardPrice','Round Up Card Price'],['isAvoidSetCardPrice','Avoid Set Card Price'],['isAvoidSetCardPriceWhileRestock','Avoid Set Card Price (Restock)']
+    ];
+    flags.forEach(function(pair) {
+      details.appendChild(makeWorkerCheckRow(i, pair[0], pair[1], w[pair[0]]));
+    });
+
+    var packLabel = document.createElement('div');
+    packLabel.style.cssText = 'font-size:12px;color:var(--text);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-top:16px;';
+    packLabel.textContent = 'Enabled Pack Types';
+    details.appendChild(packLabel);
+    
+    var packGrid = document.createElement('div');
+    packGrid.className = 'pack-grid';
+    for (var p = 0; p < 8; p++) {
+      var pItem = document.createElement('div');
+      pItem.className = 'pack-item';
+      var pCb = document.createElement('input');
+      pCb.type = 'checkbox';
+      pCb.checked = !!(w.cardPackItemTypeEnabledList[p]);
+      (function(wi, pi){ pCb.addEventListener('change', function(){ saveData.m_WorkerSaveDataList[wi].cardPackItemTypeEnabledList[pi]=this.checked; markChanged(); }); })(i, p);
+      var pSpan = document.createElement('span');
+      pSpan.textContent = 'Pack ' + (p+1);
+      pItem.appendChild(pCb);
+      pItem.appendChild(pSpan);
+      packGrid.appendChild(pItem);
+    }
+    details.appendChild(packGrid);
+
+    var expRow = document.createElement('div');
+    expRow.className = 'wrow';
+    expRow.style.marginTop = '20px';
+    var expLabel = document.createElement('label');
+    expLabel.textContent = 'Total EXP:';
+    expRow.appendChild(expLabel);
+    var expSpan = document.createElement('span');
+    expSpan.style.color = 'var(--cyan)';
+    expSpan.style.fontWeight = '700';
+    expSpan.style.fontSize = '16px';
+    expSpan.textContent = totalExp.toLocaleString();
+    expRow.appendChild(expSpan);
+    details.appendChild(expRow);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.gap = '8px';
+    btnRow.style.marginTop = '12px';
+    var maxBtn = document.createElement('button');
+    maxBtn.className = 'btn btn-g btn-sm';
+    maxBtn.style.flex = '1';
+    maxBtn.textContent = 'Max EXP';
+    (function(idx){ maxBtn.addEventListener('click', function(){ maxWorkerExp(idx); }); })(i);
+    var resetBtn = document.createElement('button');
+    resetBtn.className = 'btn btn-gray btn-sm';
+    resetBtn.style.flex = '1';
+    resetBtn.textContent = 'Reset EXP';
+    (function(idx){ resetBtn.addEventListener('click', function(){ resetWorkerExp(idx); }); })(i);
+    btnRow.appendChild(maxBtn);
+    btnRow.appendChild(resetBtn);
+    details.appendChild(btnRow);
+
+    div.appendChild(details);
+  }
+  return div;
+}
+
+function makeWorkerNumberRow(wi, field, labelText, val) {
+  var row = document.createElement('div');
+  row.className = 'wrow';
+  row.style.justifyContent = 'space-between';
+  var label = document.createElement('label');
+  label.textContent = labelText;
+  row.appendChild(label);
+  var inp = document.createElement('input');
+  inp.type = 'number';
+  inp.step = '0.01';
+  inp.value = val.toFixed ? val.toFixed(2) : val;
+  (function(i, f){ inp.addEventListener('change', function(){ saveData.m_WorkerSaveDataList[i][f]=parseFloat(this.value)||1; markChanged(); }); })(wi, field);
+  row.appendChild(inp);
+  return row;
+}
+function makeWorkerCheckRow(wi, field, labelText, val) {
+  var row = document.createElement('div');
+  row.className = 'wrow';
+  row.style.justifyContent = 'space-between';
+  var label = document.createElement('label');
+  label.textContent = labelText;
+  row.appendChild(label);
+  var cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = !!val;
+  (function(i, f){ cb.addEventListener('change', function(){ saveData.m_WorkerSaveDataList[i][f]=this.checked; markChanged(); }); })(wi, field);
+  row.appendChild(cb);
+  return row;
+}
+
+function setWorkerHired(i, val) {
+  saveData.m_IsWorkerHired[i] = val;
+  markChanged();
+  var old = document.getElementById('wcard-' + i);
+  if (old && old.parentNode) old.parentNode.replaceChild(buildWorkerCard(i), old);
+}
+function maxWorkerExp(i) {
+  saveData.m_WorkerSaveDataList[i].expList = new Array(100).fill(9999);
+  markChanged();
+  var old = document.getElementById('wcard-' + i);
+  if (old && old.parentNode) old.parentNode.replaceChild(buildWorkerCard(i), old);
+}
+function resetWorkerExp(i) {
+  saveData.m_WorkerSaveDataList[i].expList = new Array(100).fill(0);
+  markChanged();
+  var old = document.getElementById('wcard-' + i);
+  if (old && old.parentNode) old.parentNode.replaceChild(buildWorkerCard(i), old);
+}
+
+// ========================================================
+// TAB 4: GRADING
+// ========================================================
+function getCardDisplayName(cardData) {
+  var et = cardData.expansionType;
+  var mt = cardData.monsterType;
+  var bt = cardData.borderType || 0;
+  var foil = cardData.isFoil;
+  var dest = cardData.isDestiny;
+  var expName, monName;
+  if (et === 0) {
+    expName = dest ? 'Destiny' : 'Tetramon';
+    monName = TETRAMON_NAMES[mt] || ('Mon#'+mt);
+  } else if (et === 1) {
+    expName = 'Megabot';
+    monName = MEGABOT_NAMES[mt] || ('Bot#'+mt);
+  } else if (et === 2) {
+    expName = dest ? 'Ghost Black' : 'Ghost';
+    monName = 'Ghost Card #' + mt;
+  } else if (et === 3) {
+    expName = 'Fantasy RPG';
+    monName = FANTASYRPG_NAMES[mt] || ('Hero#'+mt);
+  } else if (et === 4) {
+    expName = 'Cat Job';
+    monName = CATJOB_NAMES[mt] || ('Cat#'+mt);
+  } else {
+    expName = 'Expansion' + et;
+    monName = 'Mon#' + mt;
+  }
+  var borderName = BORDER_NAMES[bt] || ('Border'+bt);
+  return expName + ' - ' + monName + '[' + borderName + (foil ? ' Foil' : '') + ']';
+}
+
+function renderGrading() {
+  if (!saveData) return;
+  document.getElementById('g-nodata').style.display = 'none';
+  document.getElementById('g-form').style.display = 'block';
+
+  // In-progress
+  var ipList = Array.isArray(saveData.m_GradeCardInProgressList) ? saveData.m_GradeCardInProgressList :[];
+  var ipDiv = document.getElementById('g-inprogress');
+  while (ipDiv.firstChild) ipDiv.removeChild(ipDiv.firstChild);
+  if (ipList.length === 0) {
+    var nd = document.createElement('div');
+    nd.className = 'no-data';
+    nd.textContent = 'No batches currently in progress.';
+    ipDiv.appendChild(nd);
+  } else {
+    ipList.forEach(function(batch, idx) { ipDiv.appendChild(buildGradingBatch(batch, idx, 'inprogress')); });
+  }
+
+  // Pending
+  var pending = saveData.m_CurrentGradeCardSubmitSet;
+  var pDiv = document.getElementById('g-pending');
+  while (pDiv.firstChild) pDiv.removeChild(pDiv.firstChild);
+  if (!pending || !Array.isArray(pending.m_CardDataList) || pending.m_CardDataList.length === 0) {
+    var nd2 = document.createElement('div');
+    nd2.className = 'no-data';
+    nd2.textContent = 'No pending submission.';
+    pDiv.appendChild(nd2);
+  } else {
+    pDiv.appendChild(buildGradingBatch(pending, 0, 'pending'));
+  }
+
+  // Completed
+  var completed = Array.isArray(saveData.m_GradedCardInventoryList) ? saveData.m_GradedCardInventoryList :[];
+  document.getElementById('g-count').textContent = completed.length;
+  var cDiv = document.getElementById('g-completed');
+  while (cDiv.firstChild) cDiv.removeChild(cDiv.firstChild);
+  if (completed.length === 0) {
+    var nd3 = document.createElement('div');
+    nd3.className = 'no-data';
+    nd3.textContent = 'No completed graded cards in inventory.';
+    cDiv.appendChild(nd3);
+  } else {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'max-height:400px;overflow-y:auto;padding-right:8px;display:flex;flex-direction:column;gap:8px;';
+    completed.forEach(function(card, idx) {
+      var chip = document.createElement('div');
+      chip.className = 'g-chip';
+      var grade = card.cardGrade !== undefined ? ' | Grade: <span style="color:var(--gold);font-weight:700">' + card.cardGrade + '</span>' : '';
+      chip.innerHTML = '<span style="color:var(--muted)">#' + (idx+1) + '</span> - ' + getCardDisplayName(card) + grade;
+      wrap.appendChild(chip);
+    });
+    cDiv.appendChild(wrap);
+  }
+}
+
+function buildGradingBatch(batch, idx, type) {
+  var div = document.createElement('div');
+  div.className = 'grading-batch';
+
+  var svcIdx = batch.m_ServiceLevel !== undefined ? batch.m_ServiceLevel : 0;
+  var svcLabel = SVC_LABELS[svcIdx] || 'Unknown';
+  var daysPassed = batch.m_DayPassed || 0;
+  var cards = Array.isArray(batch.m_CardDataList) ? batch.m_CardDataList :[];
+
+  var h4 = document.createElement('h4');
+  h4.style.cssText = 'font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:12px;';
+  var h4Text = document.createElement('span');
+  h4Text.textContent = 'Batch #' + (idx+1);
+  h4.appendChild(h4Text);
+  
+  var dot = document.createElement('span');
+  dot.style.color = 'var(--muted)';
+  dot.textContent = '•';
+  h4.appendChild(dot);
+  
+  var svcSpan = document.createElement('span');
+  svcSpan.className = 'svc-' + svcIdx;
+  svcSpan.textContent = svcLabel + ' Service';
+  h4.appendChild(svcSpan);
+  
+  if (type === 'inprogress') {
+    var dot2 = document.createElement('span');
+    dot2.style.color = 'var(--muted)';
+    dot2.textContent = '•';
+    h4.appendChild(dot2);
+    var dayText = document.createElement('span');
+    dayText.style.color = 'var(--text)';
+    dayText.textContent = 'Days Passed: ' + daysPassed;
+    h4.appendChild(dayText);
+  }
+  div.appendChild(h4);
+
+  var cardsDiv = document.createElement('div');
+  cardsDiv.className = 'grading-cards';
+  cards.forEach(function(c) {
+    var chip = document.createElement('div');
+    chip.className = 'g-chip';
+    chip.textContent = getCardDisplayName(c);
+    cardsDiv.appendChild(chip);
+  });
+  div.appendChild(cardsDiv);
+
+  if (type === 'inprogress') {
+    var actDiv = document.createElement('div');
+    actDiv.className = 'grading-actions';
+
+    var completeBtn = document.createElement('button');
+    completeBtn.className = 'btn btn-g btn-sm';
+    completeBtn.textContent = 'Complete Now';
+    (function(i){ completeBtn.addEventListener('click', function(){ completeBatch(i); }); })(idx);
+    actDiv.appendChild(completeBtn);
+
+    var skipLabel = document.createElement('span');
+    skipLabel.style.cssText = 'color:var(--muted);font-size:13px;margin-left:16px;font-weight:600;';
+    skipLabel.textContent = 'Fast Forward:';
+    actDiv.appendChild(skipLabel);
+
+    var skipInp = document.createElement('input');
+    skipInp.type = 'number';
+    skipInp.min = '1';
+    skipInp.value = '7';
+    skipInp.id = 'skip-' + idx;
+    actDiv.appendChild(skipInp);
+
+    var skipBtn = document.createElement('button');
+    skipBtn.className = 'btn btn-gray btn-sm';
+    skipBtn.textContent = 'Add Days';
+    (function(i){ skipBtn.addEventListener('click', function(){ skipBatchDays(i); }); })(idx);
+    actDiv.appendChild(skipBtn);
+
+    div.appendChild(actDiv);
+  }
+  return div;
+}
+
+function completeBatch(idx) {
+  if (!saveData || !Array.isArray(saveData.m_GradeCardInProgressList)) return;
+  saveData.m_GradeCardInProgressList[idx].m_DayPassed = 9999;
+  markChanged(); renderGrading();
+}
+function skipBatchDays(idx) {
+  if (!saveData || !Array.isArray(saveData.m_GradeCardInProgressList)) return;
+  var inp = document.getElementById('skip-' + idx);
+  var n = inp ? (parseInt(inp.value)||0) : 0;
+  saveData.m_GradeCardInProgressList[idx].m_DayPassed = (saveData.m_GradeCardInProgressList[idx].m_DayPassed||0) + n;
+  markChanged(); renderGrading();
+}
+function completeAllBatches() {
+  if (!saveData || !Array.isArray(saveData.m_GradeCardInProgressList)) return;
+  saveData.m_GradeCardInProgressList.forEach(function(b){ b.m_DayPassed = 9999; });
+  markChanged(); renderGrading();
+}
+
+// ========================================================
+// TAB 5: ACHIEVEMENTS
+// ========================================================
+function renderAchievements() {
+  if (!saveData) return;
+  document.getElementById('a-nodata').style.display = 'none';
+  document.getElementById('a-form').style.display = 'block';
+
+  if (!Array.isArray(saveData.m_IsAchievementUnlocked)) saveData.m_IsAchievementUnlocked =[];
+  while (saveData.m_IsAchievementUnlocked.length < 100) saveData.m_IsAchievementUnlocked.push(false);
+
+  var grid = document.getElementById('ach-grid');
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+  for (var i = 0; i < 100; i++) {
+    var unlocked = !!saveData.m_IsAchievementUnlocked[i];
+    var item = document.createElement('div');
+    item.className = 'ach-item' + (unlocked ? ' unlocked' : '');
+    item.id = 'ach-' + i;
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'ach-cb-' + i;
+    cb.checked = unlocked;
+    (function(idx){ cb.addEventListener('change', function(){ setAchievement(idx, this.checked); }); })(i);
+    var lbl = document.createElement('label');
+    lbl.setAttribute('for', 'ach-cb-' + i);
+    lbl.style.cursor = 'pointer';
+    lbl.textContent = 'Achievement #' + (i+1);
+    item.appendChild(cb);
+    item.appendChild(lbl);
+    grid.appendChild(item);
+  }
+  ensureDecoArrays();
+  updateDecoStats();
+}
+
+function setAchievement(i, val) {
+  saveData.m_IsAchievementUnlocked[i] = val;
+  var div = document.getElementById('ach-' + i);
+  if (div) div.className = 'ach-item' + (val ? ' unlocked' : '');
+  markChanged();
+}
+function unlockAllAch() {
+  if (!saveData) return;
+  for (var i=0;i<100;i++) saveData.m_IsAchievementUnlocked[i]=true;
+  markChanged(); renderAchievements();
+}
+function lockAllAch() {
+  if (!saveData) return;
+  for (var i=0;i<100;i++) saveData.m_IsAchievementUnlocked[i]=false;
+  markChanged(); renderAchievements();
+}
+
+function ensureDecoArrays() {
+  var defs = [['m_UnlockedDecoWallList',1001],['m_UnlockedDecoFloorList',1001],['m_UnlockedDecoCeilingList',1001]];
+  defs.forEach(function(pair) {
+    var k = pair[0], sz = pair[1];
+    if (!Array.isArray(saveData[k])) saveData[k] = [];
+    while (saveData[k].length < sz) saveData[k].push(false);
+  });
+  if (!Array.isArray(saveData.m_DecorationInventoryList)) saveData.m_DecorationInventoryList =[];
+  while (saveData.m_DecorationInventoryList.length < 1000) saveData.m_DecorationInventoryList.push(0);
+}
+
+function unlockAllDeco(type) {
+  if (!saveData) return;
+  ensureDecoArrays();
+  var k = 'm_UnlockedDeco' + type + 'List';
+  for (var i=0;i<saveData[k].length;i++) saveData[k][i]=true;
+  markChanged(); updateDecoStats();
+}
+function updateDecoStats() {
+  if (!saveData) return;
+  ensureDecoArrays();
+  var wc = saveData.m_UnlockedDecoWallList.filter(Boolean).length;
+  var fc = saveData.m_UnlockedDecoFloorList.filter(Boolean).length;
+  var cc = saveData.m_UnlockedDecoCeilingList.filter(Boolean).length;
+  var iv = saveData.m_DecorationInventoryList.reduce(function(a,b){return a+b;},0);
+  var ws = document.getElementById('deco-wall-stat');
+  var fs = document.getElementById('deco-floor-stat');
+  var cs = document.getElementById('deco-ceil-stat');
+  var is = document.getElementById('deco-inv-stat');
+  if (ws) ws.textContent = 'Walls: ' + wc + '/1001';
+  if (fs) fs.textContent = 'Floors: ' + fc + '/1001';
+  if (cs) cs.textContent = 'Ceilings: ' + cc + '/1001';
+  if (is) is.textContent = 'Total Inventory: ' + iv;
+}
+function setAllDecoInventory() {
+  if (!saveData) return; ensureDecoArrays();
+  for (var i=0;i<1000;i++) saveData.m_DecorationInventoryList[i]=1;
+  markChanged(); updateDecoStats();
+}
+function clearDecoInventory() {
+  if (!saveData) return; ensureDecoArrays();
+  for (var i=0;i<1000;i++) saveData.m_DecorationInventoryList[i]=0;
+  markChanged(); updateDecoStats();
+}
+
+// ========================================================
+// TAB 6: RAW JSON
+// ========================================================
+function updateRawJson() {
+  if (!saveData) return;
+  var el = document.getElementById('raw-json-area');
+  if (el) {
+    el.value = JSON.stringify(saveData, null, 2);
+    updateJsonLineCount();
+  }
+}
+function updateJsonLineCount() {
+  var el = document.getElementById('raw-json-area');
+  var lc = document.getElementById('json-lc');
+  if (el && lc) lc.textContent = el.value.split('\n').length.toLocaleString() + ' lines';
+}
+function jsonReplaceAll() {
+  var s = document.getElementById('json-search').value;
+  var r = document.getElementById('json-replace').value;
+  if (!s) return;
+  var el = document.getElementById('raw-json-area');
+  var escaped = s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  var count = (el.value.match(new RegExp(escaped,'g'))||[]).length;
+  el.value = el.value.split(s).join(r);
+  updateJsonLineCount();
+  showMsg('ok', 'Replaced ' + count + ' occurrence(s).');
+}
+function applyJsonChanges() {
+  var el = document.getElementById('raw-json-area');
+  var msgEl = document.getElementById('json-msg');
+  while (msgEl.firstChild) msgEl.removeChild(msgEl.firstChild);
+  try {
+    var parsed = JSON.parse(el.value);
+    saveData = parsed;
+    markChanged();
+    cachedRows = null; cachedRowsExp = null;
+    renderAll();
+    showMsg('ok', 'JSON applied successfully. All tabs updated.');
+  } catch(err) {
+    showMsg('err', 'JSON parse error: ' + err.message);
+  }
+}
+
+// ========================================================
+// SAVE / BACKUP
+// ========================================================
+function trySave() {
+  if (!saveData) return;
+  document.getElementById('save-modal').classList.add('show');
+}
+function closeSaveModal() {
+  document.getElementById('save-modal').classList.remove('show');
+}
+function downloadBackupThenSave() {
+  closeSaveModal();
+  if (originalData) {
+    var d = new Date();
+    var ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    downloadStr(originalData, 'savedGames_Release0_backup_'+ds+'.json');
+  }
+  setTimeout(doSave, 400);
+}
+function doSave() {
+  closeSaveModal();
+  if (!saveData) return;
+  downloadStr(JSON.stringify(saveData, null, 2), 'savedGames_Release0.json');
+  unsavedChanges = false;
+  document.getElementById('unsaved').style.display = 'none';
+}
+function downloadStr(text, filename) {
+  var blob = new Blob([text], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+window.addEventListener('beforeunload', function(e) {
+  if (unsavedChanges) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+</body>
+</html>

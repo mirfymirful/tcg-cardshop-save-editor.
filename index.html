@@ -507,6 +507,22 @@ td input[type=number], td input[type=text] {
 .svc-0 { color: var(--muted); font-weight: 600; }
 .svc-1 { color: var(--gold); font-weight: 700; }
 .svc-2 { color: var(--cyan); font-weight: 700; }
+
+/* Stats Viewer */
+.stats-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 6px 16px;
+  border-radius: 99px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+  transition: all 0.3s ease;
+  cursor: default;
+}
+.stats-badge:hover { background: rgba(16, 185, 129, 0.15); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+.stats-badge .s-icon { font-size: 14px; }
+.stats-badge .s-num { color: #10b981; font-weight: 800; font-family: var(--font-mono); font-size: 14px; }
+.stats-badge .s-txt { color: var(--text); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 </style>
 </head>
 <body>
@@ -515,6 +531,11 @@ td input[type=number], td input[type=text] {
 
 <div id="header">
   <h1>TCG Card Shop Simulator Save Editor</h1>
+  <div class="stats-badge" title="Total saves successfully modified by the community">
+    <span class="s-icon">🚀</span>
+    <span class="s-num" id="global-saves-count">---</span>
+    <span class="s-txt">Saves Boosted</span>
+  </div>
   <input type="file" id="file-input" accept=".json" style="display:none">
   <input type="file" id="images-input" accept=".json" style="display:none">
   <button class="hbtn" onclick="document.getElementById('file-input').click()">Load Save</button>
@@ -801,6 +822,35 @@ function esc(s) {
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#39;');
 }
+
+// ========================================================
+// GLOBAL STATS COUNTER
+// ========================================================
+var COUNTER_NAMESPACE = 'tcgsaveeditor_mirfy';
+var COUNTER_KEY = 'saves_helped';
+
+function fetchGlobalStats() {
+  fetch('https://api.counterapi.dev/v1/' + COUNTER_NAMESPACE + '/' + COUNTER_KEY)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var el = document.getElementById('global-saves-count');
+      if (el && data && data.count !== undefined) el.textContent = data.count.toLocaleString();
+    })
+    .catch(function(e){ console.error('Failed to fetch stats:', e); });
+}
+
+function incrementGlobalStats() {
+  fetch('https://api.counterapi.dev/v1/' + COUNTER_NAMESPACE + '/' + COUNTER_KEY + '/up')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var el = document.getElementById('global-saves-count');
+      if (el && data && data.count !== undefined) el.textContent = data.count.toLocaleString();
+    })
+    .catch(function(e){ console.error('Failed to increment stats:', e); });
+}
+
+document.addEventListener('DOMContentLoaded', fetchGlobalStats);
+
 
 // ========================================================
 // STATE
@@ -2015,6 +2065,10 @@ function doSave() {
   downloadStr(JSON.stringify(saveData, null, 2), 'savedGames_Release0.json');
   unsavedChanges = false;
   document.getElementById('unsaved').style.display = 'none';
+  
+  // Track successful save edit globally
+  incrementGlobalStats();
+  showMsg('ok', 'Save file exported successfully!');
 }
 function downloadStr(text, filename) {
   var blob = new Blob([text], {type:'application/json'});

@@ -830,7 +830,7 @@ var COUNTER_NAMESPACE = 'tcgsaveeditor_mirfy';
 var COUNTER_KEY = 'saves_helped';
 
 function fetchGlobalStats() {
-  fetch('https://api.counterapi.dev/v1/' + COUNTER_NAMESPACE + '/' + COUNTER_KEY)
+  fetch('https://api.counterapi.dev/v1/' + COUNTER_NAMESPACE + '/' + COUNTER_KEY + '/')
     .then(function(r){ return r.json(); })
     .then(function(data){
       var el = document.getElementById('global-saves-count');

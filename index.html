@@ -520,7 +520,6 @@ td input[type=number], td input[type=text] {
   cursor: default;
 }
 .stats-badge:hover { background: rgba(16, 185, 129, 0.15); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
-.stats-badge .s-icon { font-size: 14px; }
 .stats-badge .s-num { color: #10b981; font-weight: 800; font-family: var(--font-mono); font-size: 14px; }
 .stats-badge .s-txt { color: var(--text); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 </style>
@@ -532,8 +531,7 @@ td input[type=number], td input[type=text] {
 <div id="header">
   <h1>TCG Card Shop Simulator Save Editor</h1>
   <div class="stats-badge" title="Total saves successfully modified by the community">
-    <span class="s-icon">🚀</span>
-    <span class="s-num" id="global-saves-count">---</span>
+    <span class="s-num" id="global-saves-count">Loading...</span>
     <span class="s-txt">Saves Boosted</span>
   </div>
   <input type="file" id="file-input" accept=".json" style="display:none">
@@ -831,12 +829,23 @@ var COUNTER_KEY = 'saves_helped';
 
 function fetchGlobalStats() {
   fetch('https://api.counterapi.dev/v1/' + COUNTER_NAMESPACE + '/' + COUNTER_KEY + '/')
-    .then(function(r){ return r.json(); })
+    .then(function(r){ 
+      if (!r.ok) throw new Error('API Error');
+      return r.json(); 
+    })
     .then(function(data){
       var el = document.getElementById('global-saves-count');
-      if (el && data && data.count !== undefined) el.textContent = data.count.toLocaleString();
+      if (el && data && data.count !== undefined) {
+        el.textContent = data.count.toLocaleString();
+        localStorage.setItem('cached_saves_count', data.count);
+      }
     })
-    .catch(function(e){ console.error('Failed to fetch stats:', e); });
+    .catch(function(e){ 
+      console.error('Failed to fetch stats:', e);
+      var el = document.getElementById('global-saves-count');
+      var cached = localStorage.getItem('cached_saves_count');
+      if (el) el.textContent = cached ? Number(cached).toLocaleString() : '0';
+    });
 }
 
 function incrementGlobalStats() {
